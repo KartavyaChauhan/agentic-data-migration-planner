@@ -166,25 +166,38 @@ storage is not a supported production architecture. Use a persistent host or
 replace the mock database with an appropriate managed datastore before any real
 migration.
 
-### Railway deployment
+### Render Free deployment
 
-Railway is the recommended hosted demo platform for this repository because it
-supports a persistent volume for SQLite.
+Render Free is the recommended no-cost hosted demo platform for this
+repository. The included `render.yaml` defines the build, start command, health
+check, and secret variable.
 
 1. Push the latest commit to GitHub.
-2. In Railway, create a new project and choose **Deploy from GitHub repo**.
-3. Select this repository. Railway will build using the included `Dockerfile`.
-4. Add the variable `GEMINI_API_KEY` in the service's Variables settings.
-5. Add a Railway Volume mounted at `/app/data`.
-6. Add the variable `MIGRATION_DB_PATH=/app/data/migration.db`.
-7. Generate a public domain from the service's Networking settings.
-8. Open the generated HTTPS URL and verify:
+2. In Render, choose **New > Blueprint**.
+3. Connect the GitHub repository and select this repository.
+4. Confirm the service uses the included `render.yaml`.
+5. In the service's Environment settings, add `GEMINI_API_KEY` with the real
+   key. Keep it as a secret and do not commit it.
+6. Deploy the service and copy its generated HTTPS URL.
+7. Open the generated URL and verify:
    - the dashboard loads,
    - an AI plan can be generated,
    - approval is required before execution,
    - a dry run reports zero target inserts,
    - execution and rollback history are visible.
 
+The free Render filesystem is ephemeral. The app will work for a hosted demo,
+but `migration.db` can reset when the service restarts or redeploys. This is
+documented and acceptable only for evaluation/demo data. Persistent migration
+history requires a paid persistent disk or a managed database.
+
 The public URL and any reviewer demo notes should be added to the repository
 remarks or submission form. Do not put the Gemini key in the repository,
 README, screenshots, or reviewer remarks.
+
+### Vercel note
+
+Vercel is not the recommended host for this repository. Its serverless
+execution model and ephemeral filesystem are incompatible with the app's
+`better-sqlite3` mock persistence and rollback history. Use Render for the free
+hosted evaluation deployment.

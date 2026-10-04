@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: agentic-data-migration-planner
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: MIGRATION_DB_PATH
+        value: /tmp/migration.db
