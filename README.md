@@ -157,6 +157,10 @@ npm run build
 npm start
 ```
 
+The production build intentionally uses `next build --webpack` rather than the
+default Turbopack build. This avoids native `better-sqlite3` crashes in hosted
+build workers while preserving the same application behavior.
+
 Set `GEMINI_API_KEY` through the deployment platform's secret/configuration
 manager. Never place it in source control or expose it to client-side code.
 
