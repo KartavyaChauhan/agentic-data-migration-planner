@@ -1,8 +1,8 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
-// Using a file-based SQLite database in the root of the project
-const dbPath = path.join(process.cwd(), 'migration.db');
+// Use a deployment-mounted path when configured, otherwise keep local development simple.
+const dbPath = process.env.MIGRATION_DB_PATH || path.join(process.cwd(), 'migration.db');
 const db = new Database(dbPath, { verbose: console.log });
 
 // Initialize tables if they don't exist
