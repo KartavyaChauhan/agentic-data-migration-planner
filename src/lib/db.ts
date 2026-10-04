@@ -1,12 +1,27 @@
-import Database from 'better-sqlite3';
+import type Database from 'better-sqlite3';
 import path from 'path';
 
 // Use a deployment-mounted path when configured, otherwise keep local development simple.
 const dbPath = process.env.MIGRATION_DB_PATH || path.join(process.cwd(), 'migration.db');
-const db = new Database(dbPath, { verbose: console.log });
+let dbInstance: Database.Database | undefined;
+
+const getDatabase = (): Database.Database => {
+  if (!dbInstance) {
+    // Keep the native SQLite binding out of the build-time module graph.
+    const DatabaseConstructor = require('better-sqlite3') as new (
+      filename: string,
+      options?: { verbose?: (message?: unknown) => void }
+    ) => Database.Database;
+    const instance = new DatabaseConstructor(dbPath, { verbose: console.log });
+    initializeDatabase(instance);
+    dbInstance = instance;
+  }
+
+  return dbInstance as Database.Database;
+};
 
 // Initialize tables if they don't exist
-export const initDb = () => {
+const initializeDatabase = (db: Database.Database) => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS source_employees (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,7 +85,7 @@ export const initDb = () => {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
     
-    const seedData = [
+    const seedData: Array<[string, string, string, string, string, number, string | null]> = [
       ['EMP001', 'John Doe', '1985-05-15', 'Engineering', '2010-08-01', 1, 'johndoe@legacy.com'],
       ['EMP002', 'Jane Smith', '1990-11-22', 'Marketing', '2015-03-15', 1, 'janesmith@legacy.com'],
       ['EMP003', 'Bob Johnson', '1978-02-10', 'Sales', '2005-06-20', 0, 'bobj@legacy.com'],
@@ -80,7 +95,7 @@ export const initDb = () => {
       ['EMP007', 'No Email', '1980-01-01', 'Sales', '2010-01-01', 1, null], // Missing email
     ];
     
-    const insertMany = db.transaction((data) => {
+    const insertMany = db.transaction((data: typeof seedData) => {
       for (const row of data) {
         insertStmt.run(row);
       }
@@ -90,7 +105,14 @@ export const initDb = () => {
   }
 };
 
-// Auto-initialize on import
-initDb();
+export const initDb = () => {
+  getDatabase();
+};
+
+const db = new Proxy({} as Database.Database, {
+  get(_target, property, receiver) {
+    return Reflect.get(getDatabase(), property, receiver);
+  },
+});
 
 export default db;
